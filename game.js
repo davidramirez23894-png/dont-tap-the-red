@@ -1,6 +1,5 @@
 // game.js
 (() => {
-  // Espera a que el DOM esté listo (evita 0 tamaños en móvil)
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", init);
   } else {
@@ -42,7 +41,7 @@
     // ===== Config =====
     const TILE_COUNT = 22;
     const EDGE_PAD = 10;
-    const BEST_KEY = "nter_best_rage_brutal_v2";
+    const BEST_KEY = "nter_best_rage_brutal_v3";
 
     // ===== Helpers =====
     const now = () => performance.now();
@@ -50,7 +49,6 @@
     const rand = (a, b, r = Math.random()) => a + r * (b - a);
     const randi = (a, b, r = Math.random()) => Math.floor(rand(a, b + 1, r));
 
-    // ===== Reto diario =====
     function dailySeedStr() {
       const d = new Date();
       const y = d.getUTCFullYear();
@@ -79,7 +77,7 @@
     const rngDaily = mulberry32(hash32(seedStr));
     seedTxt.textContent = `Semilla: ${seedStr}`;
 
-    // ===== Sonido (WebAudio) =====
+    // ===== Audio =====
     let audioCtx = null;
     let sonidoActivo = true;
 
@@ -89,9 +87,7 @@
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (audioCtx.state === "suspended") audioCtx.resume();
         return true;
-      } catch {
-        return false;
-      }
+      } catch { return false; }
     }
 
     function playBeat(intensidad = 0.5) {
@@ -170,15 +166,12 @@
     let microTimer = null;
     let timeRAF = 0;
 
-    // Timer
     let timeLimitMs = 1600;
     let timeLeftMs = 1600;
     let lastTick = 0;
 
-    // latido
     let nextBeatAt = 0;
 
-    // dedo
     let lastPointer = { x: null, y: null, t: 0 };
     let lastTap = { x: null, y: null, t: 0 };
 
@@ -203,11 +196,17 @@
     }
 
     function arenaRect() { return arena.getBoundingClientRect(); }
+
     function getTileSize() {
       const probe = tiles[0]?.el;
       if (!probe) return { w: 88, h: 64 };
       const r = probe.getBoundingClientRect();
       return { w: r.width || 88, h: r.height || 64 };
+    }
+
+    function normalizeRedIndex() {
+      if (!tiles.length) { redIndex = 0; return; }
+      redIndex = ((redIndex % tiles.length) + tiles.length) % tiles.length;
     }
 
     function randomPosition(rng = Math.random) {
@@ -220,6 +219,7 @@
 
     function placeTile(i, x, y) {
       const t = tiles[i];
+      if (!t || !t.el) return;
       t.x = x; t.y = y;
       t.el.style.transform = `translate(${x}px, ${y}px)`;
     }
@@ -249,15 +249,15 @@
     function getPhaseConfig() {
       const s = score;
       if (s <= 3) return { fase: 1, modo: "Calentamiento", moveTick: 980, redTick: 760, microTick: 0, cheatChance: 0.40,
-        safeRadius: 98, huntRadius: 150, nearMissChance: 0.22, fakeRedChance: 0.18, blackoutChance: 0.00, timeLimit: 1700 };
+        safeRadius: 98, huntRadius: 150, fakeRedChance: 0.18, blackoutChance: 0.00, timeLimit: 1700 };
       if (s <= 7) return { fase: 2, modo: "Se pone raro", moveTick: 900, redTick: 680, microTick: 0, cheatChance: 0.62,
-        safeRadius: 92, huntRadius: 160, nearMissChance: 0.32, fakeRedChance: 0.28, blackoutChance: 0.12, timeLimit: 1450 };
+        safeRadius: 92, huntRadius: 160, fakeRedChance: 0.28, blackoutChance: 0.12, timeLimit: 1450 };
       if (s <= 11) return { fase: 3, modo: "Rage", moveTick: 830, redTick: 610, microTick: 0, cheatChance: 0.74,
-        safeRadius: 86, huntRadius: 170, nearMissChance: 0.44, fakeRedChance: 0.38, blackoutChance: 0.18, timeLimit: 1250 };
+        safeRadius: 86, huntRadius: 170, fakeRedChance: 0.38, blackoutChance: 0.18, timeLimit: 1250 };
       if (s <= 15) return { fase: 4, modo: "Caos real", moveTick: 770, redTick: 560, microTick: 720, cheatChance: 0.83,
-        safeRadius: 82, huntRadius: 182, nearMissChance: 0.55, fakeRedChance: 0.48, blackoutChance: 0.28, timeLimit: 1100 };
+        safeRadius: 82, huntRadius: 182, fakeRedChance: 0.48, blackoutChance: 0.28, timeLimit: 1100 };
       return { fase: 5, modo: "Imposible (casi)", moveTick: 720, redTick: 520, microTick: 620, cheatChance: 0.90,
-        safeRadius: 78, huntRadius: 192, nearMissChance: 0.66, fakeRedChance: 0.58, blackoutChance: 0.36, timeLimit: 980 };
+        safeRadius: 78, huntRadius: 192, fakeRedChance: 0.58, blackoutChance: 0.36, timeLimit: 980 };
     }
 
     function updateDangerUI(cfg) {
@@ -267,46 +267,16 @@
       dangerFill.style.width = `${pct}%`;
     }
 
-    function setRunningTaunt() {
-      if (score === 3) hint.textContent = "Ok… ahora empieza lo feo.";
-      if (score === 6) hint.textContent = "Acá muere TODO el mundo.";
-      if (score === 9) hint.textContent = "Si perdés ahora… duele.";
-      if (score === 12) hint.textContent = "Grabalo. Nadie te va a creer.";
-      if (score === 15) hint.textContent = "¿Cómo seguís vivo?";
-      if (score >= 16) hint.textContent = "Esto ya es ilegal 😭";
-    }
-
-    function endMessages(s) {
-      if (s <= 1) return { t: "OUCH", m: "Duraste menos que un parpadeo." };
-      if (s <= 3) return { t: "CASI", m: "Una más. No te vas a ir así." };
-      if (s <= 6) return { t: "ACÁ MUEREN TODOS", m: "No sos vos. (Sí sos vos.)" };
-      if (s <= 9) return { t: "DUELE", m: "Estabas demasiado cerca." };
-      if (s <= 12) return { t: "NO TE CREO", m: "Eso ya es nivel TikTok." };
-      if (s <= 16) return { t: "¿LEYENDA?", m: "Ok… compartilo YA." };
-      return { t: "HACKER", m: "Esto es ridículo. Compartilo." };
-    }
-
     function triggerFakeReds(cfg) {
-      if (!playing) return;
+      if (!playing || !tiles.length) return;
       const roll = (rngDaily() * 0.7) + (Math.random() * 0.3);
       if (roll > cfg.fakeRedChance) return;
 
-      const count = (cfg.fase >= 4 && ((rngDaily() > 0.55) ? 2 : 1)) ? 2 : 1;
-      const picks = [];
-      let tries = 0;
+      let idx = randi(0, tiles.length - 1, rngDaily());
+      if (idx === redIndex) idx = (idx + 1) % tiles.length;
 
-      while (picks.length < count && tries < 70) {
-        const idx = randi(0, tiles.length - 1, rngDaily());
-        if (idx === redIndex) { tries++; continue; }
-        if (picks.includes(idx)) { tries++; continue; }
-        picks.push(idx);
-        tries++;
-      }
-
-      for (const idx of picks) tiles[idx].el.classList.add("fakeRed");
-      setTimeout(() => {
-        for (const idx of picks) tiles[idx].el.classList.remove("fakeRed");
-      }, randi(120, 210, rngDaily()));
+      tiles[idx]?.el?.classList.add("fakeRed");
+      setTimeout(() => tiles[idx]?.el?.classList.remove("fakeRed"), randi(120, 210, rngDaily()));
     }
 
     function maybeBlackout(cfg) {
@@ -322,12 +292,11 @@
     }
 
     function repositionRed(cfg) {
-      if (!playing) return;
+      if (!playing || !tiles.length) return;
+      normalizeRedIndex();
+
       const rect = arenaRect();
       if (!rect.width || !rect.height) return;
-
-      const redTile = tiles[redIndex];
-      if (!redTile) return;
 
       const pX = lastPointer.x;
       const pY = lastPointer.y;
@@ -347,25 +316,37 @@
     }
 
     function chooseNextRedIndex() {
+      if (!tiles.length) return 0;
       let idx = randi(0, tiles.length - 1, rngDaily);
       if (idx === redIndex) idx = (idx + 1) % tiles.length;
       return idx;
     }
 
     function swapRed(cfg) {
-      if (!playing) return;
-      tiles[redIndex].el.classList.remove("red");
-      tiles[redIndex].el.classList.add("safe");
+      if (!playing || !tiles.length) return;
+      normalizeRedIndex();
+
+      const cur = tiles[redIndex];
+      if (!cur || !cur.el) return;
+
+      cur.el.classList.remove("red");
+      cur.el.classList.add("safe");
 
       redIndex = chooseNextRedIndex();
+      normalizeRedIndex();
 
-      tiles[redIndex].el.classList.remove("safe");
-      tiles[redIndex].el.classList.add("red");
+      const next = tiles[redIndex];
+      if (!next || !next.el) return;
+
+      next.el.classList.remove("safe");
+      next.el.classList.add("red");
 
       repositionRed(cfg);
     }
 
     function moveAllTiles(cfg) {
+      if (!tiles.length) return;
+
       const used = [];
       const { w, h } = getTileSize();
 
@@ -412,19 +393,25 @@
 
       clearTimers();
 
+      // NO timers si no hay tiles
+      if (!tiles.length) return;
+
       moveTimer = setInterval(() => {
+        if (!playing) return;
         const cfg2 = getPhaseConfig();
         moveAllTiles(cfg2);
         repositionRed(cfg2);
       }, cfg.moveTick);
 
       redTimer = setInterval(() => {
+        if (!playing) return;
         const cfg2 = getPhaseConfig();
         swapRed(cfg2);
       }, cfg.redTick);
 
       if (cfg.microTick > 0) {
         microTimer = setInterval(() => {
+          if (!playing) return;
           const cfg2 = getPhaseConfig();
           repositionRed(cfg2);
           triggerFakeReds(cfg2);
@@ -444,7 +431,6 @@
           lose("Te quedaste sin tiempo.");
           return;
         }
-
         updateTimeBar();
 
         // latido
@@ -463,6 +449,16 @@
         timeRAF = requestAnimationFrame(tick);
       };
       timeRAF = requestAnimationFrame(tick);
+    }
+
+    function endMessages(s) {
+      if (s <= 1) return { t: "OUCH", m: "Duraste menos que un parpadeo." };
+      if (s <= 3) return { t: "CASI", m: "Una más. No te vas a ir así." };
+      if (s <= 6) return { t: "ACÁ MUEREN TODOS", m: "No sos vos. (Sí sos vos.)" };
+      if (s <= 9) return { t: "DUELE", m: "Estabas demasiado cerca." };
+      if (s <= 12) return { t: "NO TE CREO", m: "Eso ya es nivel TikTok." };
+      if (s <= 16) return { t: "¿LEYENDA?", m: "Ok… compartilo YA." };
+      return { t: "HACKER", m: "Esto es ridículo. Compartilo." };
     }
 
     function lose(reason) {
@@ -503,42 +499,26 @@
     function winTap() {
       score += 1;
       updateStats();
-      setRunningTaunt();
 
       const cfg = getPhaseConfig();
       updateDangerUI(cfg);
 
-      // ✅ FIX: reinicia SIEMPRE el tiempo en cada toque
+      // ✅ Reinicia tiempo en CADA toque
       timeLimitMs = cfg.timeLimit;
       timeLeftMs = timeLimitMs;
       updateTimeBar();
 
       vib([12]);
 
+      // cambios de fase
       if ([4, 8, 12, 16].includes(score)) {
         applyPhaseTimers();
         if (cfg.fase >= 3) flashBlackout(95);
         if (cfg.fase >= 4) { shake(); vib([25, 30, 25]); }
       }
-    }
 
-    function start() {
-      ensureAudio();
-      score = 0;
-      updateStats();
-      hint.textContent = "Tocá cualquier botón… pero NO el rojo.";
-      mini.textContent = "Si tardás en tocar, perdés. (Sí, en serio.)";
-      setOverlay(false);
-
-      playing = true;
-
-      // ✅ FIX CLAVE: esperar 1 frame para que el arena tenga tamaño real
-      requestAnimationFrame(() => {
-        const cfg = getPhaseConfig();
-        moveAllTiles(cfg);
-        repositionRed(cfg);
-        applyPhaseTimers();
-      });
+      triggerFakeReds(cfg);
+      maybeBlackout(cfg);
     }
 
     function buildTiles() {
@@ -561,12 +541,21 @@
           if (!playing) return;
 
           ensureAudio();
+
           lastTap = { x: ev.clientX, y: ev.clientY, t: now() };
 
-          if (tiles[redIndex].el === el) {
+          // ✅ Guard: si por algo redIndex se sale, no crashea
+          if (!tiles.length) return;
+          normalizeRedIndex();
+
+          const redTile = tiles[redIndex];
+          if (!redTile || !redTile.el) return;
+
+          if (redTile.el === el) {
             lose("Tocaste el rojo.");
             return;
           }
+
           winTap();
         });
 
@@ -574,11 +563,36 @@
       }
 
       redIndex = randi(0, tiles.length - 1, rngDaily());
+      normalizeRedIndex();
+
       tiles[redIndex].el.classList.remove("safe");
       tiles[redIndex].el.classList.add("red");
 
-      // ✅ FIX: posicionar después de layout
+      // posicionar luego de layout
       requestAnimationFrame(() => moveAllTiles(getPhaseConfig()));
+    }
+
+    function start() {
+      ensureAudio();
+
+      score = 0;
+      updateStats();
+
+      hint.textContent = "Tocá cualquier botón… pero NO el rojo.";
+      mini.textContent = "Si tardás en tocar, perdés. (Sí, en serio.)";
+
+      setOverlay(false);
+
+      playing = true;
+
+      // arranque seguro con layout listo
+      requestAnimationFrame(() => {
+        if (!tiles.length) buildTiles();
+        const cfg = getPhaseConfig();
+        moveAllTiles(cfg);
+        repositionRed(cfg);
+        applyPhaseTimers();
+      });
     }
 
     function onPointerMove(ev) {
@@ -620,13 +634,9 @@
       start();
     });
 
-    let resizeT = null;
     window.addEventListener("resize", () => {
-      clearTimeout(resizeT);
-      resizeT = setTimeout(() => {
-        if (!tiles.length) return;
-        moveAllTiles(getPhaseConfig());
-      }, 140);
+      if (!tiles.length) return;
+      requestAnimationFrame(() => moveAllTiles(getPhaseConfig()));
     });
 
     // Boot
