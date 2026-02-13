@@ -1,11 +1,11 @@
 <!-- index.html -->
 <!doctype html>
-<html lang="en">
+<html lang="es">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>DON’T TAP THE RED</title>
-  <meta name="description" content="DON’T TAP THE RED — chaos reaction game. Can you beat my score?" />
+  <title>NO TOQUES EL ROJO</title>
+  <meta name="description" content="NO TOQUES EL ROJO — juego caótico de reflejos. ¿Cuánto aguantás?" />
   <meta name="theme-color" content="#0b1220" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -17,18 +17,18 @@
     <div class="brand">
       <div class="logo">■</div>
       <div class="text">
-        <div class="title">DON’T TAP THE RED</div>
-        <div class="sub">Chaos mode • 1-tap restart • mobile first</div>
+        <div class="title">NO TOQUES EL ROJO</div>
+        <div class="sub">Modo Caos • Reinicio 1 toque • Listo para TikTok</div>
       </div>
     </div>
 
     <div class="stats">
       <div class="chip">
-        <span class="k">Score</span>
+        <span class="k">Puntos</span>
         <span class="v" id="score">0</span>
       </div>
       <div class="chip">
-        <span class="k">Best</span>
+        <span class="k">Récord</span>
         <span class="v" id="best">0</span>
       </div>
     </div>
@@ -36,43 +36,51 @@
 
   <main class="stage">
     <div class="hud">
-      <div class="hint" id="hint">Tap any tile… just not the red.</div>
-      <div class="mini" id="mini">Pro tip: the red tile *moves*.</div>
+      <div class="hint" id="hint">Tocá cualquier botón… pero NO el rojo.</div>
+      <div class="mini" id="mini">Aviso: el rojo “aprende” tu movimiento 😈</div>
+
+      <div class="dangerBar">
+        <div class="dangerFill" id="dangerFill"></div>
+      </div>
+      <div class="dangerMeta">
+        <span id="faseTxt">Fase: 1</span>
+        <span id="modoTxt">Modo: Calentamiento</span>
+      </div>
     </div>
 
     <div class="arenaWrap">
-      <div class="arena" id="arena" aria-label="Game area"></div>
+      <div class="arena" id="arena" aria-label="Área del juego"></div>
 
-      <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+      <div class="overlay show" id="overlay" role="dialog" aria-modal="true">
         <div class="card">
-          <div class="big" id="endTitle">YOU LOST</div>
-          <div class="msg" id="endMsg">So close…</div>
+          <div class="big" id="endTitle">¿LISTO?</div>
+          <div class="msg" id="endMsg">Tocá “Jugar” y no toqués el rojo. Eso es todo… (o eso creés).</div>
 
           <div class="row">
             <div class="pill">
-              <div class="pK">Score</div>
+              <div class="pK">Puntos</div>
               <div class="pV" id="endScore">0</div>
             </div>
             <div class="pill">
-              <div class="pK">Best</div>
+              <div class="pK">Récord</div>
               <div class="pV" id="endBest">0</div>
             </div>
           </div>
 
           <div class="actions">
-            <button class="btn primary" id="playBtn" type="button">Play again</button>
-            <button class="btn ghost" id="shareBtn" type="button">Share</button>
+            <button class="btn primary" id="playBtn" type="button">Jugar</button>
+            <button class="btn ghost" id="shareBtn" type="button">Compartir</button>
           </div>
 
-          <div class="fine">
-            Tip: record a video of your reaction 😭
+          <div class="fine" id="fineTxt">
+            Tip: grabá tu cara perdiendo 😭 eso se vuelve viral.
           </div>
         </div>
       </div>
     </div>
 
     <footer class="foot">
-      <button class="btn ghost small" id="resetBtn" type="button">Reset best</button>
+      <button class="btn ghost small" id="resetBtn" type="button">Reiniciar récord</button>
       <a class="btn donate small" href="https://paypal.me/davidramirez23894" target="_blank" rel="noopener">💖 Donar</a>
       <a class="btn donate small" href="https://www.buymeacoffee.com/dramirez" target="_blank" rel="noopener">☕ Donar</a>
     </footer>
