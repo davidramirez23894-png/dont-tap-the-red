@@ -1,15 +1,82 @@
-<!DOCTYPE html>
+<!-- index.html -->
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DON'T TAP THE RED</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>DON’T TAP THE RED</title>
+  <meta name="description" content="DON’T TAP THE RED — chaos reaction game. Can you beat my score?" />
+  <meta name="theme-color" content="#0b1220" />
   <link rel="stylesheet" href="style.css" />
 </head>
-<body>
 
-  <h1>DON'T TAP THE RED</h1>
-  <p>Project initialized 🚀</p>
+<body>
+  <div class="bgGlow" aria-hidden="true"></div>
+
+  <header class="top">
+    <div class="brand">
+      <div class="logo">■</div>
+      <div class="text">
+        <div class="title">DON’T TAP THE RED</div>
+        <div class="sub">Chaos mode • 1-tap restart • mobile first</div>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="chip">
+        <span class="k">Score</span>
+        <span class="v" id="score">0</span>
+      </div>
+      <div class="chip">
+        <span class="k">Best</span>
+        <span class="v" id="best">0</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="stage">
+    <div class="hud">
+      <div class="hint" id="hint">Tap any tile… just not the red.</div>
+      <div class="mini" id="mini">Pro tip: the red tile *moves*.</div>
+    </div>
+
+    <div class="arenaWrap">
+      <div class="arena" id="arena" aria-label="Game area"></div>
+
+      <div class="overlay" id="overlay" role="dialog" aria-modal="true">
+        <div class="card">
+          <div class="big" id="endTitle">YOU LOST</div>
+          <div class="msg" id="endMsg">So close…</div>
+
+          <div class="row">
+            <div class="pill">
+              <div class="pK">Score</div>
+              <div class="pV" id="endScore">0</div>
+            </div>
+            <div class="pill">
+              <div class="pK">Best</div>
+              <div class="pV" id="endBest">0</div>
+            </div>
+          </div>
+
+          <div class="actions">
+            <button class="btn primary" id="playBtn" type="button">Play again</button>
+            <button class="btn ghost" id="shareBtn" type="button">Share</button>
+          </div>
+
+          <div class="fine">
+            Tip: record a video of your reaction 😭
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <footer class="foot">
+      <button class="btn ghost small" id="resetBtn" type="button">Reset best</button>
+      <a class="btn donate small" href="https://paypal.me/davidramirez23894" target="_blank" rel="noopener">💖 Donar</a>
+      <a class="btn donate small" href="https://www.buymeacoffee.com/dramirez" target="_blank" rel="noopener">☕ Donar</a>
+    </footer>
+  </main>
 
   <script src="game.js"></script>
 </body>
