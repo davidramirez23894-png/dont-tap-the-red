@@ -2,22 +2,9 @@
 :root{
   --bg0:#070b16;
   --bg1:#0b1220;
-
-  --card: rgba(15,26,47,.82);
   --card2: rgba(12,22,41,.90);
-
   --text:#eaf1ff;
   --muted:#a9b7d6;
-
-  --line: rgba(130,160,230,.22);
-  --accent:#3aa0ff;
-  --accent2:#8a5cff;
-
-  --rojo:#ff0000;
-  --rojoFake:#ff3b30;
-  --verde:#30d158;
-  --amarillo:#ffd60a;
-
   --r18:18px;
   --shadow: 0 22px 70px rgba(0,0,0,.60);
   --shadow2: 0 12px 34px rgba(0,0,0,.42);
@@ -32,7 +19,7 @@ body{
     radial-gradient(1100px 700px at 10% -10%, rgba(58,160,255,.33), transparent 60%),
     radial-gradient(900px 650px at 95% 0%, rgba(138,92,255,.22), transparent 55%),
     radial-gradient(700px 500px at 55% 110%, rgba(48,209,88,.10), transparent 55%),
-    linear-gradient(180deg, var(--bg0), var(--bg1));
+    linear-gradient(180deg, #070b16, #0b1220);
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   overflow-x:hidden;
 }
@@ -60,7 +47,6 @@ body{
   gap:10px;
 }
 
-/* Top */
 .top{
   display:flex;
   align-items:flex-end;
@@ -103,7 +89,6 @@ body{
 .k{display:block; font-size:11px; color:rgba(169,183,214,.95)}
 .v{display:block; font-weight:950; font-size:16px; letter-spacing:.2px}
 
-/* HUD */
 .hud{
   padding:10px 12px;
   border-radius: var(--r18);
@@ -130,12 +115,7 @@ body{
 .hint{font-weight:950; letter-spacing:.2px}
 .mini{margin-top:6px; font-size:12px; color:rgba(169,183,214,.95); opacity:.95}
 
-.daily{
-  display:flex;
-  flex-direction:column;
-  align-items:flex-end;
-  gap:4px;
-}
+.daily{display:flex; flex-direction:column; align-items:flex-end; gap:4px}
 .tag{
   font-size:11px;
   font-weight:950;
@@ -146,19 +126,9 @@ body{
   background: rgba(255,214,10,.10);
   color: rgba(255,236,170,.98);
 }
-.seed{
-  font-size:11px;
-  color: rgba(169,183,214,.95);
-  opacity:.95;
-}
+.seed{font-size:11px; color: rgba(169,183,214,.95); opacity:.95}
 
-.toggles{
-  display:flex;
-  gap:8px;
-  flex-wrap:wrap;
-  justify-content:flex-end;
-}
-
+.toggles{display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end}
 .toggleBtn{
   border:1px solid rgba(140,180,255,.22);
   background: rgba(255,255,255,.06);
@@ -174,36 +144,26 @@ body{
 .toggleBtn:active{ transform: translateY(1px); }
 .toggleBtn.off{ opacity:.70; }
 
-.bars{
-  margin-top:10px;
-  display:flex;
-  flex-direction:column;
-  gap:8px;
-}
-
-.dangerBar,
-.timeBar{
+.bars{margin-top:10px; display:flex; flex-direction:column; gap:8px}
+.dangerBar,.timeBar{
   height:10px;
   border-radius:999px;
   border:1px solid rgba(130,160,230,.16);
   background: rgba(255,255,255,.05);
   overflow:hidden;
 }
-
 .dangerFill{
   height:100%;
   width:0%;
   background: linear-gradient(90deg, rgba(58,160,255,.55), rgba(255,0,0,.70));
   transition: width .15s ease;
 }
-
 .timeFill{
   height:100%;
   width:100%;
   background: linear-gradient(90deg, rgba(48,209,88,.65), rgba(255,214,10,.60), rgba(255,0,0,.75));
   transition: width .05s linear;
 }
-
 .dangerMeta{
   margin-top:8px;
   display:flex;
@@ -212,7 +172,6 @@ body{
   color: rgba(169,183,214,.95);
 }
 
-/* Arena */
 .arenaWrap{
   position:relative;
   flex:1;
@@ -224,16 +183,9 @@ body{
   overflow:hidden;
 }
 
-.arena{
-  position:absolute;
-  inset:0;
-  padding: 12px;
-}
+.arena{position:absolute; inset:0; padding: 12px;}
 
-/* Screen shake */
-.arenaWrap.shake{
-  animation: shake .22s ease-in-out 1;
-}
+.arenaWrap.shake{animation: shake .22s ease-in-out 1;}
 @keyframes shake{
   0%{transform: translate(0,0)}
   20%{transform: translate(-3px,2px)}
@@ -243,7 +195,6 @@ body{
   100%{transform: translate(0,0)}
 }
 
-/* Tiles */
 .tile{
   position:absolute;
   width: 88px;
@@ -261,12 +212,7 @@ body{
 }
 .tile:hover{filter:brightness(1.10)}
 .tile:active{transform: translateY(1px) scale(.99)}
-
-.tile .dot{
-  width:10px;height:10px;border-radius:999px;
-  background: rgba(255,255,255,.78);
-  opacity:.65;
-}
+.tile .dot{width:10px;height:10px;border-radius:999px;background: rgba(255,255,255,.78);opacity:.65}
 
 .tile.safe{
   background:
@@ -276,15 +222,15 @@ body{
 }
 
 .tile.red{
+  z-index: 10; /* FIX: para que SIEMPRE se vea */
   background:
     radial-gradient(90px 60px at 20% 30%, rgba(255,255,255,.18), transparent 58%),
-    rgba(255,0,0,.74);
+    rgba(255,0,0,.80);
   border-color: rgba(255,255,255,.22);
   box-shadow: 0 16px 40px rgba(255,0,0,.16), 0 12px 34px rgba(0,0,0,.48);
 }
 .tile.red .dot{ background: rgba(255,255,255,.95); opacity:.90; }
 
-/* Falso rojo: asusta pero no mata */
 .tile.fakeRed{
   background:
     radial-gradient(90px 60px at 20% 30%, rgba(255,255,255,.16), transparent 58%),
@@ -293,23 +239,11 @@ body{
   box-shadow: 0 16px 40px rgba(255,59,48,.10), 0 12px 34px rgba(0,0,0,.40);
   animation: fakePulse .14s ease-in-out 2;
 }
-@keyframes fakePulse{
-  0%{filter:brightness(1.0)}
-  50%{filter:brightness(1.55)}
-  100%{filter:brightness(1.0)}
-}
+@keyframes fakePulse{ 0%{filter:brightness(1.0)} 50%{filter:brightness(1.55)} 100%{filter:brightness(1.0)} }
 
-/* Near-miss effect */
-.tile.nearMiss{
-  animation: nearMiss .18s ease-in-out 2;
-}
-@keyframes nearMiss{
-  0%{filter:brightness(1.0)}
-  50%{filter:brightness(1.45)}
-  100%{filter:brightness(1.0)}
-}
+.tile.nearMiss{ animation: nearMiss .18s ease-in-out 2; }
+@keyframes nearMiss{ 0%{filter:brightness(1.0)} 50%{filter:brightness(1.45)} 100%{filter:brightness(1.0)} }
 
-/* Blackout */
 .blackout{
   position:absolute;
   inset:0;
@@ -320,7 +254,6 @@ body{
 }
 .blackout.show{ opacity:1; }
 
-/* Overlay */
 .overlay{
   position:absolute;
   inset:0;
@@ -343,35 +276,14 @@ body{
   box-shadow: var(--shadow);
   padding: 16px;
 }
-
-.big{
-  font-weight: 1000;
-  letter-spacing: .35px;
-  font-size: 22px;
-}
-.msg{
-  margin-top:6px;
-  color: rgba(169,183,214,.98);
-  font-size: 13px;
-  line-height: 1.5;
-}
-
+.big{font-weight: 1000; letter-spacing: .35px; font-size: 22px;}
+.msg{margin-top:6px;color: rgba(169,183,214,.98);font-size: 13px;line-height: 1.5;}
 .row{display:flex; gap:10px; margin-top:12px}
-.pill{
-  flex:1;
-  border-radius: 18px;
-  border: 1px solid rgba(130,160,230,.18);
-  background: rgba(255,255,255,.06);
-  padding: 10px 12px;
-}
+.pill{flex:1;border-radius: 18px;border: 1px solid rgba(130,160,230,.18);background: rgba(255,255,255,.06);padding: 10px 12px;}
 .pK{font-size:11px; color: rgba(169,183,214,.98)}
 .pV{font-weight: 1000; font-size: 18px}
 
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top: 14px;
-}
+.actions{display:flex; gap:10px; margin-top: 14px;}
 
 .btn{
   border:1px solid rgba(58,160,255,.50);
@@ -381,7 +293,6 @@ body{
   border-radius: 14px;
   font-weight: 950;
   cursor:pointer;
-  transition: transform .08s ease, filter .2s ease, border-color .2s ease, background .2s ease, box-shadow .2s ease;
   display:inline-flex;
   align-items:center;
   justify-content:center;
@@ -391,52 +302,21 @@ body{
 }
 .btn:hover{filter:brightness(1.10)}
 .btn:active{transform: translateY(1px)}
-.btn.ghost{
-  border:1px solid rgba(140,180,255,.20);
-  background: rgba(255,255,255,.06);
-}
-.btn.primary{
-  border-color: rgba(58,160,255,.75);
-  box-shadow: 0 0 0 4px rgba(58,160,255,.14);
-}
+.btn.ghost{border:1px solid rgba(140,180,255,.20);background: rgba(255,255,255,.06);}
+.btn.primary{border-color: rgba(58,160,255,.75); box-shadow: 0 0 0 4px rgba(58,160,255,.14);}
 
-/* donate buttons (white) */
 .btn.donate{
   background:#ffffff;
   color:#0b1220;
   border:1px solid rgba(0,0,0,.14);
   box-shadow: 0 10px 24px rgba(0,0,0,.22);
 }
-.btn.donate:hover{
-  filter:none;
-  background: rgba(255,255,255,.92);
-  border-color: rgba(0,0,0,.22);
-}
+.btn.donate:hover{filter:none;background: rgba(255,255,255,.92);border-color: rgba(0,0,0,.22);}
 
-/* footer */
-.foot{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  justify-content:space-between;
-}
+.foot{display:flex; gap:10px; flex-wrap:wrap; justify-content:space-between;}
+.btn.small{padding:10px 12px;border-radius: 14px;width:auto;flex:1;min-width: 140px;}
+.fine{margin-top:10px;font-size:12px;color: rgba(169,183,214,.95);opacity:.9;}
 
-.btn.small{
-  padding:10px 12px;
-  border-radius: 14px;
-  width:auto;
-  flex:1;
-  min-width: 140px;
-}
-
-.fine{
-  margin-top:10px;
-  font-size:12px;
-  color: rgba(169,183,214,.95);
-  opacity:.9;
-}
-
-/* mobile */
 @media (max-width: 620px){
   .hudTop{ flex-direction:column; align-items:stretch; }
   .hudRight{ align-items:flex-start; min-width: 0; }
@@ -447,5 +327,3 @@ body{
   .big{ font-size: 20px; }
   .btn.small{ min-width: 120px; }
 }
-
-::selection{ background: rgba(58,160,255,.22); }

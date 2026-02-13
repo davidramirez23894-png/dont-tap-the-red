@@ -49,18 +49,18 @@
           </div>
 
           <div class="toggles">
-            <button class="toggleBtn" id="soundBtn" type="button" aria-label="Sonido">🔊 Sonido: ON</button>
-            <button class="toggleBtn" id="vibeBtn" type="button" aria-label="Vibración">📳 Vibración: ON</button>
+            <button class="toggleBtn" id="soundBtn" type="button">🔊 Sonido: ON</button>
+            <button class="toggleBtn" id="vibeBtn" type="button">📳 Vibración: ON</button>
           </div>
         </div>
       </div>
 
       <div class="bars">
-        <div class="dangerBar" aria-label="Peligro">
+        <div class="dangerBar">
           <div class="dangerFill" id="dangerFill"></div>
         </div>
 
-        <div class="timeBar" aria-label="Tiempo restante">
+        <div class="timeBar">
           <div class="timeFill" id="timeFill"></div>
         </div>
       </div>
@@ -72,12 +72,10 @@
     </div>
 
     <div class="arenaWrap" id="arenaWrap">
-      <div class="arena" id="arena" aria-label="Área del juego"></div>
+      <div class="arena" id="arena"></div>
 
-      <!-- Blackout -->
       <div class="blackout" id="blackout" aria-hidden="true"></div>
 
-      <!-- Overlay inicio/fin -->
       <div class="overlay show" id="overlay" role="dialog" aria-modal="true">
         <div class="card">
           <div class="big" id="endTitle">¿LISTO?</div>
@@ -99,9 +97,7 @@
             <button class="btn ghost" id="shareBtn" type="button">Compartir</button>
           </div>
 
-          <div class="fine" id="fineTxt">
-            Tip: grabá 3 intentos seguidos. Uno va a ser rage puro 😭
-          </div>
+          <div class="fine" id="fineTxt">Tip: grabá 3 intentos seguidos. Uno va a ser rage puro 😭</div>
         </div>
       </div>
     </div>
