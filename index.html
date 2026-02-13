@@ -4,8 +4,8 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>NO TOQUES EL ROJO</title>
-  <meta name="description" content="NO TOQUES EL ROJO — juego caótico de reflejos. ¿Cuánto aguantás?" />
+  <title>NO TOQUES EL ROJO — RAGE</title>
+  <meta name="description" content="NO TOQUES EL ROJO — juego caótico y competitivo con reto diario. Si tardás… perdés." />
   <meta name="theme-color" content="#0b1220" />
   <link rel="stylesheet" href="style.css" />
 </head>
@@ -18,7 +18,7 @@
       <div class="logo">■</div>
       <div class="text">
         <div class="title">NO TOQUES EL ROJO</div>
-        <div class="sub">Modo Caos • Reinicio 1 toque • Listo para TikTok</div>
+        <div class="sub">Modo RAGE • Latido • Blackouts • Falsos rojos • Reto diario</div>
       </div>
     </div>
 
@@ -36,25 +36,52 @@
 
   <main class="stage">
     <div class="hud">
-      <div class="hint" id="hint">Tocá cualquier botón… pero NO el rojo.</div>
-      <div class="mini" id="mini">Aviso: el rojo “aprende” tu movimiento 😈</div>
+      <div class="hudTop">
+        <div>
+          <div class="hint" id="hint">Tocá cualquier botón… pero NO el rojo.</div>
+          <div class="mini" id="mini">Si tardás en tocar, perdés. Y el rojo te “busca”.</div>
+        </div>
 
-      <div class="dangerBar">
-        <div class="dangerFill" id="dangerFill"></div>
+        <div class="hudRight">
+          <div class="daily">
+            <span class="tag" id="dailyTag">RETO DIARIO</span>
+            <span class="seed" id="seedTxt">—</span>
+          </div>
+
+          <div class="toggles">
+            <button class="toggleBtn" id="soundBtn" type="button" aria-label="Sonido">🔊 Sonido: ON</button>
+            <button class="toggleBtn" id="vibeBtn" type="button" aria-label="Vibración">📳 Vibración: ON</button>
+          </div>
+        </div>
       </div>
+
+      <div class="bars">
+        <div class="dangerBar" aria-label="Peligro">
+          <div class="dangerFill" id="dangerFill"></div>
+        </div>
+
+        <div class="timeBar" aria-label="Tiempo restante">
+          <div class="timeFill" id="timeFill"></div>
+        </div>
+      </div>
+
       <div class="dangerMeta">
         <span id="faseTxt">Fase: 1</span>
         <span id="modoTxt">Modo: Calentamiento</span>
       </div>
     </div>
 
-    <div class="arenaWrap">
+    <div class="arenaWrap" id="arenaWrap">
       <div class="arena" id="arena" aria-label="Área del juego"></div>
 
+      <!-- Blackout -->
+      <div class="blackout" id="blackout" aria-hidden="true"></div>
+
+      <!-- Overlay inicio/fin -->
       <div class="overlay show" id="overlay" role="dialog" aria-modal="true">
         <div class="card">
           <div class="big" id="endTitle">¿LISTO?</div>
-          <div class="msg" id="endMsg">Tocá “Jugar” y no toqués el rojo. Eso es todo… (o eso creés).</div>
+          <div class="msg" id="endMsg">Tocá “Jugar”. No toqués el rojo. Si tardás… perdés.</div>
 
           <div class="row">
             <div class="pill">
@@ -73,7 +100,7 @@
           </div>
 
           <div class="fine" id="fineTxt">
-            Tip: grabá tu cara perdiendo 😭 eso se vuelve viral.
+            Tip: grabá 3 intentos seguidos. Uno va a ser rage puro 😭
           </div>
         </div>
       </div>

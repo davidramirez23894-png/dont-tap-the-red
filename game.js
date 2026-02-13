@@ -1,7 +1,9 @@
 // game.js
 (() => {
   const arena = document.getElementById("arena");
+  const arenaWrap = document.getElementById("arenaWrap");
   const overlay = document.getElementById("overlay");
+  const blackout = document.getElementById("blackout");
 
   const scoreEl = document.getElementById("score");
   const bestEl = document.getElementById("best");
@@ -23,47 +25,178 @@
   const faseTxt = document.getElementById("faseTxt");
   const modoTxt = document.getElementById("modoTxt");
 
-  // ===== Config base =====
-  const TILE_COUNT = 20;
+  const timeFill = document.getElementById("timeFill");
+  const seedTxt = document.getElementById("seedTxt");
+
+  const soundBtn = document.getElementById("soundBtn");
+  const vibeBtn = document.getElementById("vibeBtn");
+
+  // ===== Config =====
+  const TILE_COUNT = 22;
   const EDGE_PAD = 10;
+  const BEST_KEY = "nter_best_rage_brutal_v1";
 
-  const BEST_KEY = "nter_best_v2";
+  // ===== Helpers =====
+  const now = () => performance.now();
+  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
+  const rand = (a, b, r = Math.random()) => a + r * (b - a);
+  const randi = (a, b, r = Math.random()) => Math.floor(rand(a, b + 1, r));
 
-  // Estado
+  // ===== Reto diario: semilla determinista =====
+  function dailySeedStr() {
+    const d = new Date();
+    const y = d.getUTCFullYear();
+    const m = String(d.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(d.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  }
+  function hash32(str) {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 16777619);
+    }
+    return h >>> 0;
+  }
+  function mulberry32(a) {
+    return function () {
+      a |= 0; a = (a + 0x6D2B79F5) | 0;
+      let t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  const seedStr = dailySeedStr();
+  const rngDaily = mulberry32(hash32(seedStr));
+  seedTxt.textContent = `Semilla: ${seedStr}`;
+
+  // ===== Sonido (WebAudio, sin archivos) =====
+  let audioCtx = null;
+  let sonidoActivo = true;
+
+  function ensureAudio() {
+    if (!sonidoActivo) return false;
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return true;
+  }
+
+  function playBeat(intensidad = 0.5) {
+    if (!ensureAudio()) return;
+    const t0 = audioCtx.currentTime;
+
+    // golpe grave
+    const osc1 = audioCtx.createOscillator();
+    const gain1 = audioCtx.createGain();
+    osc1.type = "sine";
+    osc1.frequency.setValueAtTime(78, t0);
+    osc1.frequency.exponentialRampToValueAtTime(52, t0 + 0.09);
+    gain1.gain.setValueAtTime(0.0001, t0);
+    gain1.gain.exponentialRampToValueAtTime(0.12 * intensidad, t0 + 0.015);
+    gain1.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.13);
+    osc1.connect(gain1).connect(audioCtx.destination);
+    osc1.start(t0);
+    osc1.stop(t0 + 0.16);
+
+    // click corto
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = "triangle";
+    osc2.frequency.setValueAtTime(145, t0 + 0.12);
+    gain2.gain.setValueAtTime(0.0001, t0 + 0.12);
+    gain2.gain.exponentialRampToValueAtTime(0.07 * intensidad, t0 + 0.13);
+    gain2.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.20);
+    osc2.connect(gain2).connect(audioCtx.destination);
+    osc2.start(t0 + 0.12);
+    osc2.stop(t0 + 0.22);
+  }
+
+  function playDeath(intensidad = 0.9) {
+    if (!ensureAudio()) return;
+    const t0 = audioCtx.currentTime;
+
+    // “bajada” + ruido tipo buzz
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.setValueAtTime(260, t0);
+    osc.frequency.exponentialRampToValueAtTime(80, t0 + 0.25);
+    gain.gain.setValueAtTime(0.0001, t0);
+    gain.gain.exponentialRampToValueAtTime(0.18 * intensidad, t0 + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.28);
+    osc.connect(gain).connect(audioCtx.destination);
+    osc.start(t0);
+    osc.stop(t0 + 0.30);
+  }
+
+  soundBtn.addEventListener("click", () => {
+    sonidoActivo = !sonidoActivo;
+    soundBtn.textContent = sonidoActivo ? "🔊 Sonido: ON" : "🔇 Sonido: OFF";
+    soundBtn.classList.toggle("off", !sonidoActivo);
+    if (sonidoActivo) ensureAudio();
+  });
+
+  // ===== Vibración =====
+  let vibracionActiva = true;
+  function vib(pattern) {
+    if (!vibracionActiva) return;
+    if (!("vibrate" in navigator)) return;
+    try { navigator.vibrate(pattern); } catch { /* ignore */ }
+  }
+  vibeBtn.addEventListener("click", () => {
+    vibracionActiva = !vibracionActiva;
+    vibeBtn.textContent = vibracionActiva ? "📳 Vibración: ON" : "📴 Vibración: OFF";
+    vibeBtn.classList.toggle("off", !vibracionActiva);
+  });
+
+  // ===== Estado =====
   let tiles = [];
   let redIndex = 0;
   let score = 0;
   let best = Number(localStorage.getItem(BEST_KEY) || 0);
+  let playing = false;
 
+  // timers
   let moveTimer = null;
   let redTimer = null;
   let microTimer = null;
+  let timeRAF = 0;
 
-  let playing = false;
+  // muerte por tiempo
+  let timeLimitMs = 1600;
+  let timeLeftMs = 1600;
+  let lastTick = 0;
 
-  // Tracking de dedo (para “cazar”)
+  // latido scheduling
+  let nextBeatAt = 0;
+
+  // tracking dedo
   let lastPointer = { x: null, y: null, t: 0 };
   let lastTap = { x: null, y: null, t: 0 };
 
-  // ===== Helpers =====
-  const clamp = (n, a, b) => Math.max(a, Math.min(b, n));
-  const rand = (a, b) => a + Math.random() * (b - a);
-  const randi = (a, b) => Math.floor(rand(a, b + 1));
-  const now = () => performance.now();
-
-  function setOverlay(show) {
-    overlay.classList.toggle("show", show);
-  }
-
+  // ===== UI helpers =====
+  function setOverlay(show) { overlay.classList.toggle("show", show); }
   function updateStats() {
     scoreEl.textContent = String(score);
     bestEl.textContent = String(best);
   }
-
-  function arenaRect() {
-    return arena.getBoundingClientRect();
+  function updateTimeBar() {
+    const pct = clamp((timeLeftMs / timeLimitMs) * 100, 0, 100);
+    timeFill.style.width = `${pct}%`;
+  }
+  function flashBlackout(ms = 120) {
+    blackout.classList.add("show");
+    setTimeout(() => blackout.classList.remove("show"), ms);
+  }
+  function shake() {
+    arenaWrap.classList.remove("shake");
+    // reflow trick
+    void arenaWrap.offsetWidth;
+    arenaWrap.classList.add("shake");
   }
 
+  function arenaRect() { return arena.getBoundingClientRect(); }
   function getTileSize() {
     const probe = tiles[0]?.el;
     if (!probe) return { w: 88, h: 64 };
@@ -71,24 +204,28 @@
     return { w: r.width, h: r.height };
   }
 
-  function randomPosition() {
+  function randomPosition(rng = Math.random) {
     const rect = arenaRect();
     const { w, h } = getTileSize();
     const maxX = Math.max(0, rect.width - w - EDGE_PAD);
     const maxY = Math.max(0, rect.height - h - EDGE_PAD);
-    return { x: randi(EDGE_PAD, maxX), y: randi(EDGE_PAD, maxY) };
+    return { x: randi(EDGE_PAD, maxX, rng()), y: randi(EDGE_PAD, maxY, rng()) };
   }
 
-  // el rojo “cerca” del dedo, pero no demasiado obvio
-  function nearPointerPosition(px, py, safeRadius, huntRadius) {
+  function placeTile(i, x, y) {
+    const t = tiles[i];
+    t.x = x; t.y = y;
+    t.el.style.transform = `translate(${x}px, ${y}px)`;
+  }
+
+  function nearPointerPosition(px, py, safeRadius, huntRadius, rng = Math.random) {
     const rect = arenaRect();
     const { w, h } = getTileSize();
-
     const localX = px - rect.left - w / 2;
     const localY = py - rect.top - h / 2;
 
-    const angle = rand(0, Math.PI * 2);
-    const radius = rand(safeRadius, huntRadius);
+    const angle = rand(0, Math.PI * 2, rng());
+    const radius = rand(safeRadius, huntRadius, rng());
 
     let x = localX + Math.cos(angle) * radius;
     let y = localY + Math.sin(angle) * radius;
@@ -102,126 +239,46 @@
     return { x: Math.round(x), y: Math.round(y) };
   }
 
-  function placeTile(i, x, y) {
-    const t = tiles[i];
-    t.x = x; t.y = y;
-    t.el.style.transform = `translate(${x}px, ${y}px)`;
-  }
-
-  // evita que queden súper apilados
-  function moveAllTiles() {
-    const used = [];
-    const rect = arenaRect();
-    const { w, h } = getTileSize();
-
-    function ok(x, y) {
-      for (const p of used) {
-        if (Math.abs(p.x - x) < w * 0.68 && Math.abs(p.y - y) < h * 0.68) return false;
-      }
-      return true;
-    }
-
-    for (let i = 0; i < tiles.length; i++) {
-      let tries = 0;
-      let p = randomPosition();
-      while (!ok(p.x, p.y) && tries < 40) {
-        p = randomPosition();
-        tries++;
-      }
-      used.push(p);
-      placeTile(i, p.x, p.y);
-    }
-  }
-
-  // ===== Dificultad por fases (viral) =====
+  // ===== Dificultad por fases (BRUTAL) =====
   function getPhaseConfig() {
-    // Fases invisibles: sube la maldad sin avisar
-    // score: 0-3 / 4-7 / 8-11 / 12-15 / 16+
     const s = score;
-
     if (s <= 3) {
-      return {
-        fase: 1,
-        modo: "Calentamiento",
-        moveTick: 980,
-        redTick: 760,
-        microTick: 0,
-        cheatChance: 0.38,
-        safeRadius: 95,
-        huntRadius: 150,
-        nearMissChance: 0.20
-      };
+      return { fase: 1, modo: "Calentamiento", moveTick: 980, redTick: 760, microTick: 0, cheatChance: 0.40,
+        safeRadius: 98, huntRadius: 150, nearMissChance: 0.22, fakeRedChance: 0.18, blackoutChance: 0.00, timeLimit: 1700 };
     }
     if (s <= 7) {
-      return {
-        fase: 2,
-        modo: "Se pone raro",
-        moveTick: 900,
-        redTick: 680,
-        microTick: 0,
-        cheatChance: 0.56,
-        safeRadius: 90,
-        huntRadius: 155,
-        nearMissChance: 0.28
-      };
+      return { fase: 2, modo: "Se pone raro", moveTick: 900, redTick: 680, microTick: 0, cheatChance: 0.62,
+        safeRadius: 92, huntRadius: 160, nearMissChance: 0.32, fakeRedChance: 0.28, blackoutChance: 0.12, timeLimit: 1450 };
     }
     if (s <= 11) {
-      return {
-        fase: 3,
-        modo: "Cazador activo",
-        moveTick: 820,
-        redTick: 610,
-        microTick: 0,
-        cheatChance: 0.68,
-        safeRadius: 86,
-        huntRadius: 160,
-        nearMissChance: 0.36
-      };
+      return { fase: 3, modo: "Rage", moveTick: 830, redTick: 610, microTick: 0, cheatChance: 0.74,
+        safeRadius: 86, huntRadius: 170, nearMissChance: 0.44, fakeRedChance: 0.38, blackoutChance: 0.18, timeLimit: 1250 };
     }
     if (s <= 15) {
-      return {
-        fase: 4,
-        modo: "Caos real",
-        moveTick: 760,
-        redTick: 560,
-        microTick: 720, // micro-movimientos extra del rojo
-        cheatChance: 0.78,
-        safeRadius: 82,
-        huntRadius: 168,
-        nearMissChance: 0.46
-      };
+      return { fase: 4, modo: "Caos real", moveTick: 770, redTick: 560, microTick: 720, cheatChance: 0.83,
+        safeRadius: 82, huntRadius: 182, nearMissChance: 0.55, fakeRedChance: 0.48, blackoutChance: 0.28, timeLimit: 1100 };
     }
-    return {
-      fase: 5,
-      modo: "Imposible (casi)",
-      moveTick: 720,
-      redTick: 520,
-      microTick: 620,
-      cheatChance: 0.86,
-      safeRadius: 78,
-      huntRadius: 178,
-      nearMissChance: 0.58
-    };
+    return { fase: 5, modo: "Imposible (casi)", moveTick: 720, redTick: 520, microTick: 620, cheatChance: 0.90,
+      safeRadius: 78, huntRadius: 192, nearMissChance: 0.66, fakeRedChance: 0.58, blackoutChance: 0.36, timeLimit: 980 };
   }
 
   function updateDangerUI(cfg) {
     faseTxt.textContent = `Fase: ${cfg.fase}`;
     modoTxt.textContent = `Modo: ${cfg.modo}`;
-    const pct = clamp((cfg.fase - 1) / 4 * 100, 0, 100);
+    const pct = clamp(((cfg.fase - 1) / 4) * 100, 0, 100);
     dangerFill.style.width = `${pct}%`;
   }
 
-  // ===== Mensajes virales (pican) =====
+  // ===== Taunts =====
   function setRunningTaunt(cfg) {
     const s = score;
     if (s === 0) {
       hint.textContent = "Tocá cualquier botón… pero NO el rojo.";
-      mini.textContent = "Ojo: el rojo se mueve donde vos vas.";
+      mini.textContent = "Si tardás en tocar, perdés. (Sí, en serio.)";
       return;
     }
-
-    if (s === 3) hint.textContent = "Ok… ya entendiste. Ahora viene lo feo.";
-    if (s === 6) hint.textContent = "Acá muere todo el mundo.";
+    if (s === 3) hint.textContent = "Ok… ahora empieza lo feo.";
+    if (s === 6) hint.textContent = "Acá muere TODO el mundo.";
     if (s === 9) hint.textContent = "Si perdés ahora… duele.";
     if (s === 12) hint.textContent = "Grabalo. Nadie te va a creer.";
     if (s === 15) hint.textContent = "¿Cómo seguís vivo?";
@@ -230,15 +287,54 @@
 
   function endMessages(s) {
     if (s <= 1) return { t: "OUCH", m: "Duraste menos que un parpadeo." };
-    if (s <= 3) return { t: "CASI", m: "Ok… una más. No te vas a ir así." };
-    if (s <= 6) return { t: "TODO EL MUNDO CAE AQUÍ", m: "Es normal… (no es normal)." };
-    if (s <= 9) return { t: "DUELE", m: "Estuviste demasiado cerca." };
-    if (s <= 12) return { t: "NO TE CREO", m: "Eso ya fue nivel TikTok." };
-    if (s <= 16) return { t: "¿LEYENDA?", m: "Compartilo YA. En serio." };
-    return { t: "HACKER", m: "Ok… esto es ridículo. Compartilo." };
+    if (s <= 3) return { t: "CASI", m: "Una más. No te vas a ir así." };
+    if (s <= 6) return { t: "ACÁ MUEREN TODOS", m: "No sos vos. (Sí sos vos.)" };
+    if (s <= 9) return { t: "DUELE", m: "Estabas demasiado cerca." };
+    if (s <= 12) return { t: "NO TE CREO", m: "Eso ya es nivel TikTok." };
+    if (s <= 16) return { t: "¿LEYENDA?", m: "Ok… compartilo YA." };
+    return { t: "HACKER", m: "Esto es ridículo. Compartilo." };
   }
 
-  // ===== Rojo tramposo + near-miss =====
+  // ===== Distracciones: falsos rojos =====
+  function triggerFakeReds(cfg) {
+    if (!playing) return;
+    const roll = (rngDaily() * 0.7) + (Math.random() * 0.3);
+    if (roll > cfg.fakeRedChance) return;
+
+    const count = (cfg.fase >= 4 && ((rngDaily() > 0.55) ? 2 : 1)) ? 2 : 1;
+    const picks = [];
+    let tries = 0;
+
+    while (picks.length < count && tries < 70) {
+      const idx = randi(0, tiles.length - 1, rngDaily());
+      if (idx === redIndex) { tries++; continue; }
+      if (picks.includes(idx)) { tries++; continue; }
+      picks.push(idx);
+      tries++;
+    }
+
+    for (const idx of picks) tiles[idx].el.classList.add("fakeRed");
+    setTimeout(() => {
+      for (const idx of picks) tiles[idx].el.classList.remove("fakeRed");
+    }, randi(120, 210, rngDaily()));
+  }
+
+  // ===== Blackouts =====
+  function maybeBlackout(cfg) {
+    if (!playing) return;
+    if (cfg.blackoutChance <= 0) return;
+
+    const recent = (now() - lastPointer.t) < 650 || (now() - lastTap.t) < 650;
+    if (!recent) return;
+
+    const roll = (rngDaily() * 0.65) + (Math.random() * 0.35);
+    if (roll < cfg.blackoutChance) {
+      flashBlackout(randi(85, 150, rngDaily()));
+      if (cfg.fase >= 4) { shake(); vib([20]); } // micro susto
+    }
+  }
+
+  // ===== Rojo cazador =====
   function repositionRed(cfg, reason = "normal") {
     if (!playing) return;
 
@@ -254,36 +350,35 @@
     const recentPointer = pX !== null && (now() - lastPointer.t) < 900;
     const recentTap = lastTap.x !== null && (now() - lastTap.t) < 700;
 
-    // Decide si “caza”
-    const shouldHunt = recentPointer && Math.random() < cfg.cheatChance;
+    const huntRoll = (rngDaily() * 0.6) + (Math.random() * 0.4);
+    const shouldHunt = recentPointer && huntRoll < cfg.cheatChance;
 
     if (!shouldHunt) {
-      const p = randomPosition();
+      const p = randomPosition(rngDaily);
       placeTile(redIndex, p.x, p.y);
       return;
     }
 
-    // 1) Cerca del dedo (no exacto)
-    let p = nearPointerPosition(pX, pY, cfg.safeRadius, cfg.huntRadius);
+    let p = nearPointerPosition(pX, pY, cfg.safeRadius, cfg.huntRadius, rngDaily);
 
-    // 2) Si acabás de tocar, mezcla con la zona del toque (más maldad)
     if (recentTap) {
-      const p2 = nearPointerPosition(lastTap.x, lastTap.y, cfg.safeRadius, cfg.huntRadius);
+      const p2 = nearPointerPosition(lastTap.x, lastTap.y, cfg.safeRadius, cfg.huntRadius, rngDaily);
       p.x = Math.round(p.x * 0.55 + p2.x * 0.45);
       p.y = Math.round(p.y * 0.55 + p2.y * 0.45);
     }
 
     placeTile(redIndex, p.x, p.y);
 
-    // Near-miss: a veces parpadea para “asustar” (viral)
-    if (reason !== "init" && (recentTap || recentPointer) && Math.random() < cfg.nearMissChance) {
+    const nearRoll = (rngDaily() * 0.7) + (Math.random() * 0.3);
+    if (reason !== "init" && (recentTap || recentPointer) && nearRoll < cfg.nearMissChance) {
       redTile.el.classList.add("nearMiss");
       setTimeout(() => redTile.el.classList.remove("nearMiss"), 420);
+      if (cfg.fase >= 3) vib([12]);
     }
   }
 
   function chooseNextRedIndex() {
-    let idx = randi(0, tiles.length - 1);
+    let idx = randi(0, tiles.length - 1, rngDaily);
     if (idx === redIndex) idx = (idx + 1) % tiles.length;
     return idx;
   }
@@ -302,62 +397,132 @@
     repositionRed(cfg, "swap");
   }
 
-  // Efecto “me reaccionó” después del toque (pero sutil)
   function afterTapTrick(cfg) {
     if (!playing) return;
 
-    // En fases altas, a veces el rojo “teletransporta” justo después
-    if (cfg.fase >= 3 && Math.random() < 0.22) {
-      setTimeout(() => repositionRed(cfg, "afterTap"), randi(55, 110));
+    const roll = (rngDaily() * 0.6) + (Math.random() * 0.4);
+
+    if (cfg.fase >= 3 && roll < 0.26) {
+      setTimeout(() => repositionRed(cfg, "afterTap"), randi(55, 110, rngDaily()));
     }
-    // En fases altas, a veces cambia el rojo de golpe
-    if (cfg.fase >= 4 && Math.random() < 0.18) {
-      setTimeout(() => swapRed(cfg), randi(90, 160));
+    if (cfg.fase >= 4 && roll < 0.20) {
+      setTimeout(() => swapRed(cfg), randi(90, 160, rngDaily()));
     }
   }
 
-  // ===== Loop timers según fase =====
+  // ===== Movimiento general =====
+  function moveAllTiles(cfg) {
+    const used = [];
+    const { w, h } = getTileSize();
+
+    function ok(x, y) {
+      for (const p of used) {
+        if (Math.abs(p.x - x) < w * 0.68 && Math.abs(p.y - y) < h * 0.68) return false;
+      }
+      return true;
+    }
+
+    for (let i = 0; i < tiles.length; i++) {
+      let tries = 0;
+      let p = randomPosition(rngDaily);
+      while (!ok(p.x, p.y) && tries < 45) {
+        p = randomPosition(rngDaily);
+        tries++;
+      }
+      used.push(p);
+      placeTile(i, p.x, p.y);
+    }
+
+    triggerFakeReds(cfg);
+    maybeBlackout(cfg);
+  }
+
+  // ===== Timers =====
   function clearTimers() {
     if (moveTimer) clearInterval(moveTimer);
     if (redTimer) clearInterval(redTimer);
     if (microTimer) clearInterval(microTimer);
+    if (timeRAF) cancelAnimationFrame(timeRAF);
     moveTimer = redTimer = microTimer = null;
+    timeRAF = 0;
   }
 
   function applyPhaseTimers() {
     const cfg = getPhaseConfig();
     updateDangerUI(cfg);
 
+    // tiempo por tap
+    timeLimitMs = cfg.timeLimit;
+    timeLeftMs = timeLimitMs;
+    updateTimeBar();
+
+    // latido scheduling
+    nextBeatAt = 0;
+
     clearTimers();
 
-    // Movimiento general
     moveTimer = setInterval(() => {
-      moveAllTiles();
-      repositionRed(cfg, "moveAll");
+      const cfg2 = getPhaseConfig();
+      moveAllTiles(cfg2);
+      repositionRed(cfg2, "moveAll");
     }, cfg.moveTick);
 
-    // Swap de rojo
     redTimer = setInterval(() => {
-      swapRed(cfg);
+      const cfg2 = getPhaseConfig();
+      swapRed(cfg2);
     }, cfg.redTick);
 
-    // Micro movimientos extra del rojo (solo fases 4+)
     if (cfg.microTick > 0) {
       microTimer = setInterval(() => {
-        repositionRed(cfg, "micro");
+        const cfg2 = getPhaseConfig();
+        repositionRed(cfg2, "micro");
+        triggerFakeReds(cfg2);
+        maybeBlackout(cfg2);
       }, cfg.microTick);
     }
+
+    // loop de tiempo + latido
+    lastTick = now();
+    const tick = () => {
+      if (!playing) return;
+      const t = now();
+      const dt = t - lastTick;
+      lastTick = t;
+
+      timeLeftMs -= dt;
+      if (timeLeftMs <= 0) {
+        lose("Te quedaste sin tiempo.");
+        return;
+      }
+      updateTimeBar();
+
+      // Latido: más fuerte y rápido según fase y urgencia
+      const cfgB = getPhaseConfig();
+      const urgencia = 1 - (timeLeftMs / timeLimitMs); // 0..1
+      const intensidad = clamp(0.22 + (cfgB.fase * 0.12) + (urgencia * 0.58), 0.22, 1.0);
+      const intervalo = clamp(520 - (cfgB.fase * 55) - (urgencia * 260), 140, 520);
+
+      if (nextBeatAt === 0) nextBeatAt = t; // arranca ya
+      if (t >= nextBeatAt) {
+        playBeat(intensidad);
+        // micro vibración con el latido en fase alta
+        if (cfgB.fase >= 4 && urgencia > 0.55) vib([10]);
+        nextBeatAt = t + intervalo;
+      }
+
+      timeRAF = requestAnimationFrame(tick);
+    };
+    timeRAF = requestAnimationFrame(tick);
   }
 
-  // ===== Game Flow =====
-  function lose(reason = "Tocaste el rojo.") {
+  // ===== Flow =====
+  function lose(reason) {
     playing = false;
     clearTimers();
 
     const msgs = endMessages(score);
     endTitle.textContent = msgs.t;
 
-    // “humillación amigable” + cercanía
     const extra =
       score === 0 ? "Ni calentaste 😭" :
       score < 5 ? "Una más. Literal." :
@@ -371,11 +536,17 @@
       localStorage.setItem(BEST_KEY, String(best));
       fineTxt.textContent = "🔥 NUEVO RÉCORD. Ahora sí: compartilo.";
     } else {
-      fineTxt.textContent = "Tip: grabá tu reacción. Eso se vuelve viral.";
+      fineTxt.textContent = "Tip: grabá tu reacción. Rage = views.";
     }
 
     endScore.textContent = String(score);
     endBest.textContent = String(best);
+
+    // efectos de perder
+    playDeath(0.95);
+    shake();
+    flashBlackout(120);
+    vib([80, 40, 120, 40, 160]);
 
     updateStats();
     setOverlay(true);
@@ -387,41 +558,56 @@
 
     const cfg = getPhaseConfig();
     setRunningTaunt(cfg);
-
-    // Si cambiás de fase, recalibrá timers (sube dificultad al toque)
     updateDangerUI(cfg);
 
-    // Re-aplicar timers justo al cruzar umbrales
-    // (para que el salto se sienta “de repente”)
+    // resetea tiempo en cada tap
+    timeLimitMs = cfg.timeLimit;
+    timeLeftMs = timeLimitMs;
+    updateTimeBar();
+
+    // micro feedback
+    vib([12]);
+
+    // salto brusco al cambiar fase (viral)
     if ([4, 8, 12, 16].includes(score)) {
       applyPhaseTimers();
-      // micro golpe visual
-      arena.style.filter = "brightness(1.04)";
+      arena.style.filter = "brightness(1.05)";
       setTimeout(() => (arena.style.filter = ""), 90);
+      if (cfg.fase >= 3) flashBlackout(95);
+      if (cfg.fase >= 4) { shake(); vib([25, 30, 25]); }
     }
 
     afterTapTrick(cfg);
+
+    // rojo se acerca más en fases altas
+    if (cfg.fase >= 3) {
+      const roll = (rngDaily() * 0.5) + (Math.random() * 0.5);
+      if (roll < 0.36) repositionRed(cfg, "tap");
+    }
+
+    triggerFakeReds(cfg);
+    maybeBlackout(cfg);
   }
 
   function resetRoundUI() {
     score = 0;
     updateStats();
     hint.textContent = "Tocá cualquier botón… pero NO el rojo.";
-    mini.textContent = "Consejo: el rojo se acerca a tu dedo 😈";
+    mini.textContent = "Si tardás en tocar, perdés. (Sí, en serio.)";
     updateDangerUI(getPhaseConfig());
+    timeFill.style.width = "100%";
     setOverlay(false);
   }
 
   function start() {
+    // botón Jugar = interacción => desbloquea audio legalmente
+    ensureAudio();
+
     resetRoundUI();
     playing = true;
 
-    moveAllTiles();
-
-    // reposiciona rojo con cfg inicial (no muy malvado)
+    moveAllTiles(getPhaseConfig());
     repositionRed(getPhaseConfig(), "init");
-
-    // arranca timers según fase
     applyPhaseTimers();
   }
 
@@ -450,44 +636,42 @@
       el.addEventListener("click", (ev) => {
         if (!playing) return;
 
+        // si el usuario toca, ya podemos asegurar audio (por si apagó/encendió)
+        ensureAudio();
+
         lastTap = { x: ev.clientX, y: ev.clientY, t: now() };
 
-        // Si tocó el rojo: perder
         if (tiles[redIndex].el === el) {
           lose("Tocaste el rojo.");
           return;
         }
 
-        // Si tocó seguro: sumar
+        // falso rojo NO mata
         winTap();
-
-        // En fases altas, a veces el rojo “te cae encima” (pero no siempre)
-        const cfg = getPhaseConfig();
-        if (cfg.fase >= 3 && Math.random() < 0.30) repositionRed(cfg, "tap");
       });
 
       arena.appendChild(el);
     }
 
-    // rojo inicial
-    redIndex = randi(0, tiles.length - 1);
+    // rojo inicial determinista por día
+    redIndex = randi(0, tiles.length - 1, rngDaily());
     tiles[redIndex].el.classList.remove("safe");
     tiles[redIndex].el.classList.add("red");
 
-    moveAllTiles();
+    moveAllTiles(getPhaseConfig());
   }
 
-  // ===== Pointer tracking (para cazar) =====
+  // ===== Pointer tracking =====
   function onPointerMove(ev) {
     if (!playing) return;
     lastPointer = { x: ev.clientX, y: ev.clientY, t: now() };
   }
   window.addEventListener("pointermove", onPointerMove, { passive: true });
 
-  // ===== Share (viral) =====
+  // ===== Share =====
   async function shareScore() {
     const texto =
-      `NO TOQUES EL ROJO 😭\n` +
+      `NO TOQUES EL ROJO 😭 (RETO DIARIO ${seedStr})\n` +
       `Aguanté ${score} toques.\n` +
       `¿Podés superarme?\n`;
 
@@ -495,18 +679,12 @@
 
     try {
       if (navigator.share) {
-        await navigator.share({
-          title: "NO TOQUES EL ROJO",
-          text: texto,
-          url
-        });
+        await navigator.share({ title: "NO TOQUES EL ROJO", text: texto, url });
       } else {
         await navigator.clipboard.writeText(`${texto}${url}`);
         endMsg.textContent = "Copiado al portapapeles ✅ Mandalo al grupo.";
       }
-    } catch {
-      // cancelado o bloqueado
-    }
+    } catch { /* cancelado */ }
   }
 
   // ===== Buttons =====
@@ -518,9 +696,10 @@
     best = 0;
     updateStats();
     hint.textContent = "Récord reiniciado. Ahora demostralo 😈";
+    vib([20, 20, 20]);
   });
 
-  // Tap afuera del card = restart instantáneo (loop TikTok)
+  // Tap afuera del card = restart instantáneo
   overlay.addEventListener("click", (e) => {
     if (e.target.closest(".card")) return;
     start();
@@ -532,7 +711,7 @@
     clearTimeout(resizeT);
     resizeT = setTimeout(() => {
       if (!tiles.length) return;
-      moveAllTiles();
+      moveAllTiles(getPhaseConfig());
       repositionRed(getPhaseConfig(), "resize");
     }, 140);
   });
@@ -548,11 +727,12 @@
 
     setOverlay(true);
     endTitle.textContent = "¿LISTO?";
-    endMsg.textContent = "Tocá “Jugar”. No toqués el rojo. Y grabá tu reacción 😭";
+    endMsg.textContent = "Tocá “Jugar”. No toqués el rojo. Si tardás… perdés.";
     endScore.textContent = "0";
     endBest.textContent = String(best);
-    fineTxt.textContent = "Tip: videos cortos y rage = viral.";
+    fineTxt.textContent = "Tip: grabá 3 intentos seguidos. Uno va a ser rage puro 😭";
     updateDangerUI(getPhaseConfig());
+    timeFill.style.width = "100%";
   }
 
   boot();
